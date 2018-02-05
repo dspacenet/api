@@ -18,13 +18,20 @@ router.post('/login', async (ctx) => {
   });
   ctx.assert(user, 401, 'Bad user/password');
   ctx.body = {
-    token: jwt.sign({ id: user.spaceId, name: user.username }, secret),
-    user: { username: user.username, userId: user.spaceId },
+    token: jwt.sign({
+      id: user.spaceId,
+      name: user.username,
+      rand: Math.random(),
+    }, secret),
   };
 });
 
 router.get('/user', (ctx) => {
-  ctx.body = { username: ctx.state.user.name, userId: ctx.state.user.id };
+  ctx.body = { user: ctx.state.user };
+});
+
+router.get('/logout', (ctx) => {
+  ctx.body = { status: 'OK' };
 });
 
 router.get('/space/:path', async (ctx) => {
