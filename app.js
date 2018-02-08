@@ -28,7 +28,7 @@ db.initialize().then(() => {
   app.listen(port);
   process.stdout.write(`Server running at port: ${port}\n`);
 }).catch((error) => {
-  // Throw error if databa connection failed
+  // Throw error if database connection failed
   process.stderr.write(`Error connecting to database: ${error.message}\n`);
 });
 

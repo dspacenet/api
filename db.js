@@ -23,7 +23,10 @@ const User = sequelize.define('User', {
  * @returns {Promise<Void>}
  */
 async function initialize() {
+  // Check databse credentials
   await sequelize.authenticate();
+
+  // Sync user model
   await User.sync();
 }
 
