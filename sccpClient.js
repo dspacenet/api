@@ -13,7 +13,7 @@ function spaceWrap(program, path) {
   // If path is empty, no alteration is done.
   if (path === '') return program;
   let result = program;
-  `${path}`.split('.').forEach((spaceId) => { result = `([${result}] ${spaceId})`; });
+  `${path}`.split('.').reverse().forEach((spaceId) => { result = `([${result}] ${spaceId})`; });
   return result;
 }
 
