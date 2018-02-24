@@ -53,7 +53,8 @@ async function getSpace(path) {
     error.status = 400;
     throw error;
   }
-  return data.result;
+  // Filter system and private messages before sendind it
+  return data.result.filter(post => post.class !== 'system' && post.usr_msg !== 'private');
 }
 
 module.exports = { runSCCP, getSpace };
