@@ -1,8 +1,12 @@
 const Router = require('koa-router');
 const jwt = require('jsonwebtoken');
+const mailgun = require('mailgun-js')({ apiKey: process.env.MAILGUN_API_KEY, domain: process.env.MAILGUN_DOMAIN });
+const crypto = require('crypto');
+
 const { User } = require('./db');
 const sccpClient = require('./sccpClient');
 
+const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const secret = process.env.SECRET || 'averyveryverysecretsecret';
 
 const router = new Router({ prefix: '/api' });
@@ -33,6 +37,26 @@ router.post('/login', async (ctx) => {
       rand: Math.random(),
     }, secret),
   };
+});
+
+router.post('/singup', async (ctx) => {
+  ctx.assert(ctx.request.body.firstName, 400, 'Enter first name');
+  ctx.assert(ctx.request.body.lastName, 400, 'Enter last name');
+  ctx.assert(emailRegex.test(String(ctx.request.body.email).toLowerCase()), 400, 'Enter a valid email');
+  ctx.assert(ctx.request.body.password && ctx.request.body.password.length >= 8, 400, 'Enter a password with at least 8 characters');
+  ctx.assert(ctx.request.body.password === ctx.request.body.passwordConfirmation, 400, 'Password and its confirmation do not match');
+
+  await mailgun.messages().send({
+    from: 'DSpaceNet Admin <admin@dspacenet.com>',
+    to: 'sebastianlopezn@gmail.com',
+    subject: 'DSpaceNet registration request',
+    text: `${ctx.request.body.firstName} ${ctx.request.body.lastName} has requested to join DSpaceNet:
+      First Name: ${ctx.request.body.firstName}
+      Last Name: ${ctx.request.body.lastName}
+      Email: ${ctx.request.body.email}
+      Password MD5 Hash: ${crypto.createHash('md5').update(ctx.request.body.password).digest('hex')}`,
+  });
+  ctx.body = { status: 'OK' };
 });
 
 /**
