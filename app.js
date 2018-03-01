@@ -1,3 +1,4 @@
+require('dotenv').config();
 const Koa = require('koa');
 const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
@@ -16,7 +17,7 @@ const app = new Koa();
 app.use(logger());
 app.use(bodyParser());
 app.use(cors({ credentials: true }));
-app.use(jwt({ secret }).unless({ path: [/^\/api\/login/] }));
+app.use(jwt({ secret }).unless({ path: [/^\/api\/(login|singup)/] }));
 
 // Router Setup
 app.use(router.routes());

@@ -11,6 +11,7 @@
   "dependencies": {
     "@koa/cors": "^2.2.1",
     "axios": "^0.17.1",
+    "dotenv": "^5.0.1",
     "eslint": "^4.9.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.7.0",
@@ -20,6 +21,7 @@
     "koa-jwt": "^3.3.0",
     "koa-logger": "^3.1.0",
     "koa-router": "^7.3.0",
+    "mailgun-js": "^0.16.0",
     "mysql2": "^1.5.1",
     "sequelize": "^4.28.6"
   }
