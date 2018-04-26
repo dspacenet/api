@@ -44,7 +44,7 @@ async function runSCCP(program, path, user, timeu = 1) {
  * @param {String} path
  * @todo Use 'getSpace/' to get the global space.
  */
-async function getSpace(path) {
+async function getSpace(path, filter = true) {
   const { data } = path === '' ?
     await sccpClient.get('getGlobal') :
     await sccpClient.post('getSpace', { id: path.split('.') });
@@ -53,6 +53,8 @@ async function getSpace(path) {
     error.status = 400;
     throw error;
   }
+  // If not filter, send messages without fiiltering.
+  if (!filter) return data.result;
   // Filter system and private messages before sendind it
   return data.result.filter(post => post.class !== 'system' && post.usr_msg !== 'private');
 }

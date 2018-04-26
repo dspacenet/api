@@ -92,6 +92,7 @@ router.get('/logout', (ctx) => {
  * @apiGroup Space
  *
  * @apiParam {String} path Space's path
+ * @apiParam {Boolean} filter=true Filter system messages
  *
  * @apiError UserError Malformed path: `path`
  * @apiError AuthorizationError Authentication required.
@@ -99,12 +100,14 @@ router.get('/logout', (ctx) => {
  * @todo path assertion regexp shold be global.
  */
 router.get('/space/:path', async (ctx) => {
+  // Filter system messages?
+  const filter = ctx.query.filter === undefined ? true : ctx.query.filter;
   // Normalize path of global
   const path = ctx.params.path === 'global' ? '' : ctx.params.path;
   // if path is malformed, throw error
   ctx.assert(/^(|\d+(\.\d+)*)$/.test(path), 400, `Malformed path: ${path}`);
   // Call SCCP API to get space contents and write response
-  ctx.body = await sccpClient.getSpace(path);
+  ctx.body = await sccpClient.getSpace(path, filter);
 });
 
 /**
