@@ -101,7 +101,7 @@ router.get('/logout', (ctx) => {
  */
 router.get('/space/:path', async (ctx) => {
   // Filter system messages?
-  const filter = ctx.query.filter === undefined ? true : ctx.query.filter;
+  const filter = ctx.query.filter !== "false";
   // Normalize path of global
   const path = ctx.params.path === 'global' ? '' : ctx.params.path;
   // if path is malformed, throw error
