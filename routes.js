@@ -23,7 +23,7 @@ const router = new Router({ prefix: '/api' });
  * @apiError AuthorizationError Wrong `username`/`password` combination.
  */
 router.post('/login', async (ctx) => {
-  // Get user fron database
+  // Get user from database
   const user = await User.findOne({
     where: { username: ctx.request.body.username, password: ctx.request.body.password },
   });
@@ -97,11 +97,11 @@ router.get('/logout', (ctx) => {
  * @apiError UserError Malformed path: `path`
  * @apiError AuthorizationError Authentication required.
  *
- * @todo path assertion regexp shold be global.
+ * @todo path assertion regexp should be global.
  */
 router.get('/space/:path', async (ctx) => {
   // Filter system messages?
-  const filter = ctx.query.filter !== "false";
+  const filter = ctx.query.filter !== 'false';
   // Normalize path of global
   const path = ctx.params.path === 'global' ? '' : ctx.params.path;
   // if path is malformed, throw error
@@ -118,13 +118,13 @@ router.get('/space/:path', async (ctx) => {
  * @apiParam path    Space's path
  * @apiParam program Program to be posted
  *
- * @apiSucess status OK
+ * @apiSuccess status OK
  *
  * @apiError UserError Malformed path: `path`
  * @apiError UserError Malformed Program: `program`
  * @apiError AuthorizationError Authentication required.
  *
- * @todo path assertion regexp shold be global.
+ * @todo path assertion regexp should be global.
  */
 router.post('/space/:path', async (ctx) => {
   // if no program is set, throw error
@@ -181,9 +181,9 @@ router.get('/meta/space/:path(\\d+):path2(\\.\\d+)*', async (ctx) => {
  * @apiSuccess {Boolean}  isGlobal The space is the global space
  * @apiSuccess {String}   space Space alias
  * @apiSuccess {Number}   spaceId Space ID
- * @apiSuccess {Object[]} childs Subspaces of the Space
- * @apiSuccess {Number}   childs.id Subspace ID
- * @apiSuccess {String}   childs.username Username of the Subspace's owner
+ * @apiSuccess {Object[]} children subspaces of the space
+ * @apiSuccess {Number}   children.id Subspace ID
+ * @apiSuccess {String}   children.username Username of the subspace's owner
  *
  * @apiError NotFound Space not found
  * @apiError AuthorizationError Authentication required.
@@ -206,7 +206,7 @@ router.get('/meta/space/:alias', async (ctx) => {
    *        of a given space */
   // Right now, we are using all the other users as subspaces with the except of
   // the same user as the subspaces.
-  const childs = await User.findAll({
+  const children = await User.findAll({
     attributes: ['spaceId', 'username'],
     where: {
       spaceId: { $ne: spaceId },
@@ -218,7 +218,7 @@ router.get('/meta/space/:alias', async (ctx) => {
     isGlobal: spaceId === '',
     space: ctx.params.alias,
     spaceId,
-    childs: childs.map(child => ({ id: child.spaceId, user: child.username })),
+    children: children.map(child => ({ id: child.spaceId, user: child.username })),
   };
 });
 

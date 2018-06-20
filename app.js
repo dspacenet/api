@@ -13,7 +13,7 @@ const secret = process.env.SECRET || 'averyveryverysecretsecret';
 // Koa application Setup
 const app = new Koa();
 
-// Middlewares Setup
+// Middleware Setup
 app.use(logger());
 app.use(bodyParser());
 app.use(cors({ credentials: true }));
