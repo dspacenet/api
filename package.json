@@ -23,6 +23,7 @@
     "koa-router": "^7.3.0",
     "mailgun-js": "^0.18.0",
     "mysql2": "^1.5.1",
+    "sculp-parser": "git+https://github.com/dspacenet/sculp-parser.git",
     "sequelize": "^4.28.6"
   }
 }
