@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { SculpParser, Expressions } = require('sculp-parser');
+const { SculpParser, Expressions } = require('@dspacenet/sculp-parser');
 
 // Create HTTP Client to consume the SCCP API
 const sccpClient = axios.create({ baseURL: `http://localhost:${process.env.SCCP_PORT || 8082}/` });
