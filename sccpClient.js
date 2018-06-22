@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { APIError } = require('./errorHandling');
 const { SculpParser, Expressions } = require('@dspacenet/sculp-parser');
 
 // Create HTTP Client to consume the SCCP API
@@ -26,7 +27,12 @@ function spaceWrap(program, path) {
  */
 async function runSCCP(program, path, user, timeu = 1) {
   // Parse the program to check syntax
-  const parser = new SculpParser(program);
+  let parser;
+  try {
+    parser = new SculpParser(program);
+  } catch (error) {
+    throw new APIError(`${Error.name}: ${error.message}`, 400);
+  }
   // Add user to vote calls
   parser.applyTo(Expressions.Procedure, (procedure) => { if (procedure.name === 'vote') procedure.pushParam(user); });
   // rebuild program with update source code
@@ -37,12 +43,7 @@ async function runSCCP(program, path, user, timeu = 1) {
   const { data } = await sccpClient.post('runsccp', { config: spaceWrap(patchedProgram, path), user, timeu });
   // If result is 'error', throw error messages in result.errors
   if (data.result === 'error') {
-    let errorMessage = '';
-    data.errors.forEach((error) => { errorMessage = `${errorMessage} ${error.error}`; });
-    const error = new Error(errorMessage);
-    error.expose = true;
-    error.status = 400;
-    throw error;
+    throw new APIError(data.errors.map(error => error.error).reduce((res, x, i) => (i ? x : `${res} ${x}`)), 400);
   }
 }
 
@@ -50,6 +51,7 @@ async function runSCCP(program, path, user, timeu = 1) {
  * Return the content of the space in [path].
  * @param {String} path
  * @todo Use 'getSpace/' to get the global space.
+ * @todo Use APIError
  */
 async function getSpace(path, filter = true) {
   const { data } = path === '' ?
