@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { APIError } = require('./errorHandling');
 const { SculpParser, Expressions } = require('@dspacenet/sculp-parser');
+const { tagProcedures } = require('./sculp');
 
 // Create HTTP Client to consume the SCCP API
 const sccpClient = axios.create({ baseURL: `http://localhost:${process.env.SCCP_PORT || 8082}/` });
@@ -33,14 +34,13 @@ async function runSCCP(program, path, user, timeu = 1) {
   } catch (error) {
     throw new APIError(`${Error.name}: ${error.message}`, 400);
   }
-  // Add user to vote calls
-  parser.applyTo(Expressions.Procedure, (procedure) => { if (procedure.name === 'vote') procedure.pushParam(user); });
-  // rebuild program with update source code
-  const parsedProgram = parser.result.toString();
+  const originalProgram = parser.result.toString();
+  // Tag procedures
+  parser.applyTo(Expressions.Procedure, procedure => tagProcedures(procedure, { user }));
   // Path the program to post it's source code to the top of the given path
-  const patchedProgram = `${parsedProgram} || enter @ "top" do post("${encodeURI(parsedProgram)}")`;
+  const finalProgram = `${parser.result.toString()} || enter @ "top" do post("<pids|p|${user}>${encodeURI(originalProgram)}")`;
   // Call the SCCP API with the given program, path and user.
-  const { data } = await sccpClient.post('runsccp', { config: spaceWrap(patchedProgram, path), user, timeu });
+  const { data } = await sccpClient.post('runsccp', { config: spaceWrap(finalProgram, path), user, timeu });
   // If result is 'error', throw error messages in result.errors
   if (data.result === 'error') {
     throw new APIError(data.errors.map(error => error.error).reduce((res, x, i) => (i ? x : `${res} ${x}`)), 400);
