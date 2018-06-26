@@ -43,7 +43,7 @@ async function runSCCP(program, path, user, timeu = 1) {
   const { data } = await sccpClient.post('runsccp', { config: spaceWrap(finalProgram, path), user, timeu });
   // If result is 'error', throw error messages in result.errors
   if (data.result === 'error') {
-    throw new APIError(data.errors.map(error => error.error).reduce((res, x, i) => (i ? x : `${res} ${x}`)), 400);
+    throw new APIError(data.errors.reduce((res, x, i) => (i ? x : `${res} ${x}`)), 400);
   }
 }
 
@@ -54,9 +54,7 @@ async function runSCCP(program, path, user, timeu = 1) {
  * @todo Use APIError
  */
 async function getSpace(path, filter = true) {
-  const { data } = path === '' ?
-    await sccpClient.get('getGlobal') :
-    await sccpClient.post('getSpace', { id: path.split('.') });
+  const { data } = await sccpClient.post('getSpace', path === '' ? {} : { path });
   if (data.result === 'error') {
     const error = new Error(data.errors);
     error.status = 400;
