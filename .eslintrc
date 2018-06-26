@@ -12,7 +12,10 @@
         "sourceType": "module"
     },
     "rules": {
-        "linebreak-style": "off"
+        "linebreak-style": "off",
+        "no-param-reassign": [2, { 
+            "props": false
+        }]
     },
     "extends": "airbnb-base"
 }
