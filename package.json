@@ -9,6 +9,7 @@
   "author": "Jason Sebastian Lopez <sebastianlopezn@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@dspacenet/maude": "^0.1.0",
     "@dspacenet/sculp-parser": "^1.4.2",
     "@koa/cors": "^2.2.1",
     "axios": "^0.17.1",
@@ -24,6 +25,7 @@
     "koa-router": "^7.3.0",
     "mailgun-js": "^0.18.0",
     "mysql2": "^1.5.1",
-    "sequelize": "^4.28.6"
+    "sequelize": "^4.28.6",
+    "socket.io": "^2.1.1"
   }
 }
