@@ -4,8 +4,11 @@ const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
 const jwt = require('koa-jwt');
 const cors = require('@koa/cors');
+const http = require('http');
+const SocketIO = require('socket.io');
 const router = require('./routes');
 const db = require('./db');
+const sccpClient = require('./sccpClient');
 
 const port = process.env.API_PORT || process.env.PORT || 3500;
 const secret = process.env.SECRET || 'averyveryverysecretsecret';
@@ -23,13 +26,17 @@ app.use(jwt({ secret }).unless({ path: [/^\/api\/(login|singup)/] }));
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-// Checks database connection
-db.initialize().then(() => {
-  // Start Server listening
-  app.listen(port);
-  process.stdout.write(`Server running at port: ${port}\n`);
-}).catch((error) => {
-  // Throw error if database connection failed
-  process.stderr.write(`Error connecting to database: ${error.message}\n`);
-});
+// SocketIO Setup
+const server = http.Server(app.callback());
+app.context.io = SocketIO(server);
 
+async function main() {
+  await db.initialize();
+  await sccpClient.initialize();
+  server.listen(port);
+  console.log(`Server running at port: ${port}\n`); // eslint-disable-line no-console
+}
+
+main().catch((error) => {
+  throw error;
+});
