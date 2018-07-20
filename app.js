@@ -9,6 +9,7 @@ const SocketIO = require('socket.io');
 const router = require('./routes');
 const db = require('./db');
 const sccpClient = require('./sccpClient');
+const io = require('./io');
 
 const port = process.env.API_PORT || process.env.PORT || 3500;
 const secret = process.env.SECRET || 'averyveryverysecretsecret';
@@ -28,7 +29,7 @@ app.use(router.allowedMethods());
 
 // SocketIO Setup
 const server = http.Server(app.callback());
-app.context.io = SocketIO(server);
+io.initialize(SocketIO(server));
 
 async function main() {
   await db.initialize();

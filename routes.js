@@ -5,6 +5,7 @@ const crypto = require('crypto');
 
 const { User } = require('./db');
 const sccpClient = require('./sccpClient');
+const io = require('./io');
 
 const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const secret = process.env.SECRET || 'averyveryverysecretsecret';
@@ -134,7 +135,9 @@ router.post('/space/:path', async (ctx) => {
   // if path is malformed, throw error
   ctx.assert(/^(|\d+(\.\d+)*)$/.test(path), 400, `Malformed path: ${path}`);
   // call SCCP API to run the program
-  await sccpClient.runSCCP(ctx.request.body.program, path, ctx.state.user.name);
+  const differences = await sccpClient.runSCCP(ctx.request.body.program, path, ctx.state.user.name);
+  // emit change events
+  io.reportChanges(differences);
   // if no error happen, write OK to the response.
   ctx.body = { status: 'OK' };
 });
