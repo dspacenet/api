@@ -1,6 +1,7 @@
 const { APIError } = require('./errorHandling');
 const { SculpParser, Expressions } = require('@dspacenet/sculp-parser');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 const MaudeProcess = require('@dspacenet/maude');
 const sculp = require('./sculp');
 
@@ -9,7 +10,12 @@ const sculp = require('./sculp');
  * @prop {String} class
  * @prop {String} content
  * @prop {Number} pid
+ * @prop {String} id
  * @prop {String} user
+ *
+ * @typedef MemoryDifferences
+ * @prop {[Message]} added
+ * @prop {[string]} removed
  */
 
 const maude = new MaudeProcess(`${__dirname}/../sccp/maude.linux64`);
@@ -24,6 +30,7 @@ let rawMemory = '';
  * @param {String} program - A SCULP/SCCP program to be executed.
  * @param {String} path - A string containing the path to the space where the
  * program will be executed.
+ * @todo can be done in better way using reduce.
  */
 function spaceWrap(program, path) {
   // If path is empty, no alteration is done.
@@ -39,12 +46,13 @@ function spaceWrap(program, path) {
  * @returns {Message}
  */
 function parseMessage(message) {
-  const match = message.match(/<(.+)\|.\|(.+)>(.*)/);
+  const match = message.match(/<(.+)\|.\|(.+)\|(.+)>(.*)/);
   if (match !== null) {
     return {
       pid: match[1],
-      user: match[2],
-      content: match[3],
+      id: match[2],
+      user: match[3],
+      content: match[4],
       class: 'message',
     };
   }
@@ -52,6 +60,28 @@ function parseMessage(message) {
     class: 'system',
     content: message,
   };
+}
+
+/**
+ *
+ * @param {Object.<string,[Message]} oldMemory
+ * @param {Object.<string,[Message]} newMemory
+ * @returns {Object.<string,MemoryDifferences}
+ */
+function getMemoryChanges(oldMemory, newMemory) {
+  const differences = {};
+  /** @type {[string]} */
+  const keys = [...new Set(Object.keys(oldMemory).concat(Object.keys(newMemory)))];
+  keys.forEach((key) => {
+    const oldIds = (oldMemory[key] || []).map(message => message.id);
+    const newIds = (newMemory[key] || []).map(message => message.id);
+    differences[key] = {
+      added: (newMemory[key] || []).filter(message => !oldIds.includes(message.id)),
+      removed: oldIds.filter(id => !newIds.includes(id)),
+    };
+    if (!differences[key].added.length && !differences[key].removed.length) delete differences[key];
+  });
+  return differences;
 }
 
 /**
@@ -87,15 +117,19 @@ function parseMemory() {
     }
     token = regex.exec(rawMemory);
   }
+  const differences = getMemoryChanges(memory, newMemory);
   memory = newMemory;
+  return differences;
 }
 
 async function updateState(newMemory, newProcesses) {
   ntccTime += 1;
-  rawMemory = newMemory.replace('<pids|', `<${ntccTime}|`);
+  rawMemory = newMemory
+    .replace('<pids|', `<${ntccTime}|`)
+    .replace(/\|uid\|/g, () => `|${crypto.randomBytes(5).toString('hex')}|`);
   processes = newProcesses;
   await fs.writeFile('state.json', JSON.stringify({ ntccTime, rawMemory, processes }));
-  parseMemory();
+  return parseMemory();
 }
 
 /**
@@ -132,7 +166,7 @@ async function runSCCP(program, path, user) {
     processes = `${translatedProgram} || ${processes}`;
     ({ result } = await maude.run(`red in NTCC-RUN : IO(< ${processes} ; ${rawMemory} >) . \n`));
     const [, newProcesses, newMemory] = result.match(/^Conf: < (.+) ; (.+) >/);
-    await updateState(newMemory, newProcesses);
+    return updateState(newMemory, newProcesses);
   } catch (error) {
     throw new APIError(`${Error.name}: ${error.message}`, 400);
   }
