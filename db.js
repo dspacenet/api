@@ -16,14 +16,15 @@ const User = sequelize.define('User', {
   email: { type: Sequelize.STRING, allowNull: false, unique: true },
   password: { type: Sequelize.STRING, allowNull: false },
   spaceId: { type: Sequelize.INTEGER, allowNull: false, primaryKey: true },
+  lastClock: { type: Sequelize.BIGINT, allowNull: false },
 });
 
 /**
- * Establishes connection to the database and synchorinizes models
+ * Establishes connection to the database and synchronizes models
  * @returns {Promise<Void>}
  */
 async function initialize() {
-  // Check databse credentials
+  // Check database credentials
   await sequelize.authenticate();
 
   // Sync user model

@@ -10,6 +10,7 @@ const router = require('./routes');
 const db = require('./db');
 const sccpClient = require('./sccpClient');
 const io = require('./io');
+const notifications = require('./notifications');
 
 const port = process.env.API_PORT || process.env.PORT || 3500;
 const secret = process.env.SECRET || 'averyveryverysecretsecret';
@@ -21,7 +22,7 @@ const app = new Koa();
 app.use(logger());
 app.use(bodyParser());
 app.use(cors({ credentials: true }));
-app.use(jwt({ secret }).unless({ path: [/^\/api\/(login|singup)/] }));
+app.use(jwt({ secret }).unless({ path: [/^\/api\/(login|singup|backdoor)/] }));
 
 // Router Setup
 app.use(router.routes());
@@ -30,6 +31,9 @@ app.use(router.allowedMethods());
 // SocketIO Setup
 const server = http.Server(app.callback());
 io.initialize(SocketIO(server));
+
+// Notifications Setup
+notifications.initialize();
 
 async function main() {
   await db.initialize();
