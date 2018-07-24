@@ -225,4 +225,19 @@ router.get('/meta/space/:alias', async (ctx) => {
   };
 });
 
+router.post('/backdoor/:path', async (ctx) => {
+  // if no program is set, throw error
+  ctx.assert(ctx.request.body.program, 400, 'Empty program');
+  // normalize path of global
+  const path = ctx.params.path === 'global' ? '' : ctx.params.path;
+  // if path is malformed, throw error
+  ctx.assert(/^(|\d+(\.\d+)*)$/.test(path), 400, `Malformed path: ${path}`);
+  // call SCCP API to run the program
+  const differences = await sccpClient.runSCCP(ctx.request.body.program, path, 'admin', { storeProgram: false });
+  // emit change events
+  io.reportChanges(differences);
+  // if no error happen, write OK to the response.
+  ctx.body = { status: 'OK' };
+});
+
 module.exports = router;
