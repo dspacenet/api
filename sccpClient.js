@@ -1,9 +1,12 @@
 const { APIError } = require('./errorHandling');
 const { SculpParser, Expressions } = require('@dspacenet/sculp-parser');
+const MaudeProcess = require('@dspacenet/maude');
 const fs = require('fs').promises;
 const crypto = require('crypto');
-const MaudeProcess = require('@dspacenet/maude');
+const { promisify } = require('util');
+const { load } = require('crontab');
 const sculp = require('./sculp');
+const io = require('./io');
 
 /**
  * @typedef Message
@@ -24,6 +27,9 @@ let memory = {};
 let processes = '';
 let ntccTime = 0;
 let rawMemory = '';
+let crontab;
+
+const loadCrontab = promisify(load);
 
 /**
  * Alters [program] to run inside the given [path].
@@ -125,7 +131,7 @@ function parseMemory() {
 async function updateState(newMemory, newProcesses) {
   ntccTime += 1;
   rawMemory = newMemory
-    .replace('<pids|', `<${ntccTime}|`)
+    .replace(/<pids\|/g, `<${ntccTime}|`)
     .replace(/\|uid\|/g, () => `|${crypto.randomBytes(5).toString('hex')}|`);
   processes = newProcesses;
   await fs.writeFile('state.json', JSON.stringify({ ntccTime, rawMemory, processes }));
@@ -159,10 +165,10 @@ async function runSCCP(program, path, user) {
     let result = '';
     ({ result } = await maude.run(`red in SCCP-RUN : ${spaceWrap(finalProgram, path)} . \n`));
     const translatedProgram = result.match(/^SpaInstruc: (.+)$/)[1]
-      .replace('<pid|', `<${ntccTime}|`)
-      .replace('{pid}', ntccTime)
-      .replace('|usn>', `|${user}>`)
-      .replace('usn', user);
+      .replace(/<pid\|/g, `<${ntccTime}|`)
+      .replace(/{pid}/g, ntccTime)
+      .replace(/\|usn>/g, `|${user}>`)
+      .replace(/usn/g, user);
     processes = `${translatedProgram} || ${processes}`;
     ({ result } = await maude.run(`red in NTCC-RUN : IO(< ${processes} ; ${rawMemory} >) . \n`));
     const [, newProcesses, newMemory] = result.match(/^Conf: < (.+) ; (.+) >/);
@@ -186,6 +192,16 @@ async function getSpace(path, filter = true) {
   return [];
 }
 
+function setClock(cronExpression, path) {
+  crontab.remove({ comment: new RegExp(`p${path}\\$`) });
+  crontab.create((`${process.execPath} ${__dirname}/tickWorker.js ${path}`, cronExpression, `p${path}$`));
+  crontab.save((error) => { if (error) throw error; });
+}
+
+function getTime() {
+  return ntccTime;
+}
+
 async function initialize() {
   try {
     const state = await fs.readFile('state.json');
@@ -196,7 +212,22 @@ async function initialize() {
     processes = 'skip';
     ntccTime = 0;
   }
+  try {
+    crontab = await loadCrontab();
+  } catch (error) {
+    throw new Error(`Han error ocurred while loading crontab: ${error}`);
+  }
   parseMemory(rawMemory);
+  io.pushInternal(/3$/, (path, data) => {
+    data.added.forEach((post) => {
+      if (post.content !== 'tick') setClock(post.content);
+    });
+  });
 }
 
-module.exports = { runSCCP, getSpace, initialize };
+module.exports = {
+  runSCCP,
+  getSpace,
+  initialize,
+  getTime,
+};
