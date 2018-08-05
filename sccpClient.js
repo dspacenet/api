@@ -38,6 +38,7 @@ const parser = new SculpParser({
   clock: [Expressions.String],
   abort: [],
   kill: [Expressions.String],
+  mail: [Expressions.String],
   'create-poll': [Expressions.String],
   'close-poll': [],
 });
