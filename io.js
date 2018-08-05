@@ -8,16 +8,20 @@ module.exports = {
         const space = path === '' ? '0' : `0.${path}`;
         console.log(`socket bond: ${space}`); // eslint-disable-line no-console
         if (!this.socketLog[space]) this.socketLog[space] = [];
-        this.socketLog[space].push(socket);
-        socket.on('disconnect', () => {
-          console.log(`socket disconnected: ${space}`); // eslint-disable-line no-console
-          this.socketLog[space].slice(this.socketLog[space].indexOf(socket), 1);
-        });
+        if (this.socketLog[space].indexOf(socket) < 0) {
+          this.socketLog[space].push(socket);
+          socket.on('disconnect', () => {
+            console.log(`socket disconnected: ${space}`); // eslint-disable-line no-console
+            this.socketLog[space].slice(this.socketLog[space].indexOf(socket), 1);
+          });
+        } else socket.count = (socket.count || 1) + 1;
       });
       socket.on('unbind', (path) => {
         const space = path === '' ? '0' : `0.${path}`;
         console.log(`socket disbound: ${space}`); // eslint-disable-line no-console
-        this.socketLog[space].slice(this.socketLog[space].indexOf(socket), 1);
+        if (socket.count && socket.count > 1) {
+          socket.count -= 1;
+        } else this.socketLog[space].slice(this.socketLog[space].indexOf(socket), 1);
       });
     });
   },
