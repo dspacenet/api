@@ -29,6 +29,19 @@ let ntccTime = 0;
 let rawMemory = '';
 let crontab;
 
+const parser = new SculpParser({
+  post: [Expressions.String],
+  signal: [Expressions.String],
+  vote: [Expressions.String],
+  rm: [Expressions.Pattern, Expressions.Pattern, Expressions.Pattern],
+  notify: [Expressions.String],
+  clock: [Expressions.String],
+  abort: [],
+  kill: [Expressions.String],
+  'create-poll': [Expressions.String],
+  'close-poll': [],
+});
+
 const loadCrontab = promisify(load);
 
 /**
@@ -146,17 +159,13 @@ async function updateState(newMemory, newProcesses) {
  */
 async function runSCCP(program, path, user) {
   try {
+    const parsedProgram = parser.parse(program);
     // Parse the program to check syntax
-    const parser = new SculpParser(program);
-    const originalProgram = parser.result.toString();
-    // Translate unimplemented expressions
-    parser.patch(sculp.translateUnimplementedExpressions);
+    const originalProgram = parsedProgram.toString();
     // Patch the program to post it's source code to the top of the given path
-    const finalProgram = new SculpParser(`$program || enter @ "top" do post("${encodeURI(originalProgram)}")`, {
-      program: parser.result,
+    const finalProgram = parser.parse(`$program || enter @ "top" do post("${encodeURI(originalProgram)}")`, {
+      program: parsedProgram,
     });
-    // Translate space path
-    finalProgram.patch(sculp.translateSpacePath);
     // Tag procedures
     finalProgram.applyTo(
       Expressions.Procedure,
@@ -169,11 +178,12 @@ async function runSCCP(program, path, user) {
       .replace(/{pid}/g, ntccTime)
       .replace(/\|usn>/g, `|${user}>`)
       .replace(/usn/g, user);
-    processes = `${translatedProgram} || ${processes}`;
-    ({ result } = await maude.run(`red in NTCC-RUN : IO(< ${processes} ; ${rawMemory} >) . \n`));
+    const processesToExecute = `${translatedProgram} || ${processes}`;
+    ({ result } = await maude.run(`red in NTCC-RUN : IO(< ${processesToExecute} ; ${rawMemory} >) . \n`));
     const [, newProcesses, newMemory] = result.match(/^Conf: < (.+) ; (.+) >/);
     return updateState(newMemory, newProcesses);
   } catch (error) {
+    console.log(error); // eslint-disable-line no-console
     throw new APIError(`${Error.name}: ${error.message}`, 400);
   }
 }
