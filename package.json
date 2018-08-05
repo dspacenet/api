@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@dspacenet/maude": "^0.1.0",
-    "@dspacenet/sculp-parser": "^1.4.2",
+    "@dspacenet/sculp-parser": "^1.5.0",
     "@koa/cors": "^2.2.1",
     "axios": "^0.17.1",
     "crontab": "^1.1.3",
