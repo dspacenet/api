@@ -15,6 +15,7 @@ function tagProcedures(procedure, { user }) {
       break;
     case 'post':
     case 'notify':
+    case 'mail':
       procedure.params.list[0].value = `<pids|p|uid|${user}>${procedure.params.list[0].value}`;
       break;
     // no default
