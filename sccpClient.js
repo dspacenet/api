@@ -33,7 +33,7 @@ const parser = new SculpParser({
   post: [Expressions.String],
   signal: [Expressions.String],
   vote: [Expressions.String],
-  rm: [Expressions.Pattern, Expressions.Pattern, Expressions.Pattern],
+  rm: [Expressions.Constraint, Expressions.Constraint, Expressions.Constraint],
   notify: [Expressions.String],
   clock: [Expressions.String],
   abort: [],
