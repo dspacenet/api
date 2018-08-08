@@ -9,7 +9,7 @@
   "author": "Jason Sebastian Lopez <sebastianlopezn@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@dspacenet/maude": "^0.1.0",
+    "@dspacenet/maude": "^0.1.1",
     "@dspacenet/sculp-parser": "^1.5.1",
     "@koa/cors": "^2.2.1",
     "axios": "^0.17.1",
