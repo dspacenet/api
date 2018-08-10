@@ -21,7 +21,7 @@ const io = require('./io');
  * @prop {[string]} removed
  */
 
-const maude = new MaudeProcess(`${__dirname}/../sccp/maude.linux64`);
+const maude = new MaudeProcess(`${__dirname}/../sccp/maude.linux64`, { timeLimit: 15000 });
 /** @type {Object.<string,[Message]>} */
 let memory = {};
 let processes = '';
