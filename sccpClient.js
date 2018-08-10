@@ -243,7 +243,9 @@ async function getProcess(raw = false) {
 
 function setClock(cronExpression, path) {
   crontab.remove({ comment: new RegExp(`p${path}\\$`) });
-  crontab.create(`${process.execPath} ${__dirname}/tickWorker.js ${path}`, cronExpression, `p${path}$`);
+  if (cronExpression !== '0') {
+    crontab.create(`${process.execPath} ${__dirname}/tickWorker.js ${path}`, cronExpression, `p${path}$`);
+  }
   crontab.save((error) => { if (error) throw error; });
 }
 
@@ -283,7 +285,7 @@ function killAllProcess() {
 }
 
 function killAllClocks() {
-  crontab.remove();
+  crontab.remove({ comment: /.*/ });
   crontab.save((error) => { if (error) throw error; });
 }
 
