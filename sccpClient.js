@@ -143,10 +143,10 @@ function parseMemory() {
 }
 
 async function updateState(newMemory, newProcesses) {
-  ntccTime += 1;
   rawMemory = newMemory
     .replace(/<pids\|/g, `<${ntccTime}|`)
     .replace(/\|uid\|/g, () => `|${crypto.randomBytes(5).toString('hex')}|`);
+  ntccTime += 1;
   processes = newProcesses;
   await fs.writeFile('state.json', JSON.stringify({ ntccTime, rawMemory, processes }));
   return parseMemory();
