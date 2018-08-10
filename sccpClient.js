@@ -158,22 +158,33 @@ async function updateState(newMemory, newProcesses) {
  * @param {String} path - path to the space where the program will be executed.
  * @param {String} user - owner of the program.
  */
-async function runSCCP(program, path, user) {
+async function runSCCP(program, path, user, raw) {
   try {
-    const parsedProgram = parser.parse(program);
-    // Parse the program to check syntax
-    const originalProgram = parsedProgram.toString();
-    // Patch the program to post it's source code to the top of the given path
-    const finalProgram = parser.parse(`$program || enter @ "top" do post("${encodeURI(originalProgram)}")`, {
-      program: parsedProgram,
-    });
-    // Tag procedures
-    finalProgram.applyTo(
-      Expressions.Procedure,
-      procedure => sculp.tagProcedures(procedure, { user }),
-    );
     let result = '';
-    ({ result } = await maude.run(`red in SCCP-RUN : ${spaceWrap(finalProgram, path)} . \n`));
+    let programToExecute;
+    if (raw) {
+      programToExecute = program
+        .replace(/post\("/g, `post("<pid|p|uid|${user}>`)
+        .replace(/notify\("/g, `notify("<pid|p|uid|${user}>`)
+        .replace(/signal\("/g, `signal("<pid|p|uid|${user}>`)
+        .replace(/vote\("/g, `vote("<pid|v|uid|${user}>`)
+        .replace(/signal\("/g, `signal("<pid|s|uid|${user}>`);
+    } else {
+      const parsedProgram = parser.parse(program);
+      // Parse the program to check syntax
+      const originalProgram = parsedProgram.toString();
+      // Patch the program to post it's source code to the top of the given path
+      const finalProgram = parser.parse(`$program || enter @ "top" do post("${encodeURI(originalProgram)}")`, {
+        program: parsedProgram,
+      });
+      // Tag procedures
+      finalProgram.applyTo(
+        Expressions.Procedure,
+        procedure => sculp.tagProcedures(procedure, { user }),
+      );
+      programToExecute = finalProgram.toString();
+    }
+    ({ result } = await maude.run(`red in SCCP-RUN : ${spaceWrap(programToExecute, path)} . \n`));
     const translatedProgram = result.match(/^SpaInstruc: (.+)$/)[1]
       .replace(/<pid\|/g, `<${ntccTime}|`)
       .replace(/{pid}/g, ntccTime)
@@ -184,7 +195,7 @@ async function runSCCP(program, path, user) {
     const [, newProcesses, newMemory] = result.match(/^Conf: < (.+) ; (.+) >/);
     return updateState(newMemory, newProcesses);
   } catch (error) {
-    console.log(error); // eslint-disable-line no-console
+    console.error(error); // eslint-disable-line no-console
     throw new APIError(`${Error.name}: ${error.message}`, 400);
   }
 }
@@ -201,6 +212,33 @@ async function getSpace(path, filter = true) {
     return memory[path].filter(post => post.class !== 'system');
   }
   return [];
+}
+
+async function getProcess(raw = false) {
+  if (raw) return processes;
+  const regex = /( \|\| |[()"]|[^()"]+)/y;
+  const processesList = [];
+  let token = regex.exec(processes);
+  let isString = false;
+  let parenthesisCount = 0;
+  let lastFound = 0;
+  while (token !== null) {
+    switch (token[0]) {
+      case '(': if (!isString) parenthesisCount += 1; break;
+      case ')': if (!isString) parenthesisCount -= 1; break;
+      case '"': isString = !isString; break;
+      case ' || ':
+        if (!isString && parenthesisCount === 0) {
+          processesList.push(processes.substring(lastFound, regex.lastIndex - 4));
+          lastFound = regex.lastIndex;
+        }
+        break;
+      // no default
+    }
+    token = regex.exec(processes);
+  }
+  processesList.push(processes.substring(lastFound, processes.length));
+  return processesList.map(item => ({ process: item }));
 }
 
 function setClock(cronExpression, path) {
@@ -226,7 +264,7 @@ async function initialize() {
   try {
     crontab = await loadCrontab();
   } catch (error) {
-    throw new Error(`Han error ocurred while loading crontab: ${error}`);
+    throw new Error(`An error ocurred while loading crontab: ${error}`);
   }
   parseMemory(rawMemory);
   io.pushInternal(/3$/, (path, data) => {
@@ -236,9 +274,32 @@ async function initialize() {
   });
 }
 
+function resetMemory() {
+  return updateState('empty[empty-forest]', processes);
+}
+
+function killAllProcess() {
+  processes = 'skip';
+}
+
+function killAllClocks() {
+  crontab.remove();
+  crontab.save((error) => { if (error) throw error; });
+}
+
+function restartCore() {
+  maude.destroy();
+  maude.spawnProcess();
+}
+
 module.exports = {
   runSCCP,
   getSpace,
   initialize,
   getTime,
+  getProcess,
+  resetMemory,
+  restartCore,
+  killAllProcess,
+  killAllClocks,
 };

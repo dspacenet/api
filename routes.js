@@ -135,7 +135,12 @@ router.post('/space/:path', async (ctx) => {
   // if path is malformed, throw error
   ctx.assert(/^(|\d+(\.\d+)*)$/.test(path), 400, `Malformed path: ${path}`);
   // call SCCP API to run the program
-  const differences = await sccpClient.runSCCP(ctx.request.body.program, path, ctx.state.user.name);
+  const differences = await sccpClient.runSCCP(
+    ctx.request.body.program,
+    path,
+    ctx.state.user.name,
+    ctx.request.body.raw,
+  );
   // emit change events
   io.reportChanges(differences);
   // if no error happen, write OK to the response.
@@ -225,6 +230,10 @@ router.get('/meta/space/:alias', async (ctx) => {
   };
 });
 
+router.get('/process/', async (ctx) => {
+  ctx.body = await sccpClient.getProcess();
+});
+
 router.post('/backdoor/:path', async (ctx) => {
   // if no program is set, throw error
   ctx.assert(ctx.request.body.program, 400, 'Empty program');
@@ -237,6 +246,26 @@ router.post('/backdoor/:path', async (ctx) => {
   // emit change events
   io.reportChanges(differences);
   // if no error happen, write OK to the response.
+  ctx.body = { status: 'OK' };
+});
+
+router.delete('/control/spaces', async (ctx) => {
+  io.reportChanges(await sccpClient.resetMemory());
+  ctx.body = { status: 'OK' };
+});
+
+router.delete('/control/process', async (ctx) => {
+  sccpClient.killAllProcess();
+  ctx.body = { status: 'OK' };
+});
+
+router.delete('/control/clocks', async (ctx) => {
+  sccpClient.killAllClocks();
+  ctx.body = { status: 'OK' };
+});
+
+router.post('/control/restart', async (ctx) => {
+  sccpClient.restartCore();
   ctx.body = { status: 'OK' };
 });
 
