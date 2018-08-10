@@ -269,7 +269,7 @@ async function initialize() {
   parseMemory(rawMemory);
   io.pushInternal(/6$/, (path, data) => {
     data.added.forEach((post) => {
-      if (post.content !== 'tick') setClock(post.content, path);
+      if (post.content !== 'tick') setClock(post.content, path.match(/^(.+)\.?6$/)[1]);
     });
   });
 }
