@@ -243,7 +243,7 @@ async function getProcess(raw = false) {
 
 function setClock(cronExpression, path) {
   crontab.remove({ comment: new RegExp(`p${path}\\$`) });
-  crontab.create((`${process.execPath} ${__dirname}/tickWorker.js ${path}`, cronExpression, `p${path}$`));
+  crontab.create(`${process.execPath} ${__dirname}/tickWorker.js ${path}`, cronExpression, `p${path}$`);
   crontab.save((error) => { if (error) throw error; });
 }
 
@@ -267,9 +267,9 @@ async function initialize() {
     throw new Error(`An error ocurred while loading crontab: ${error}`);
   }
   parseMemory(rawMemory);
-  io.pushInternal(/3$/, (path, data) => {
+  io.pushInternal(/6$/, (path, data) => {
     data.added.forEach((post) => {
-      if (post.content !== 'tick') setClock(post.content);
+      if (post.content !== 'tick') setClock(post.content, path);
     });
   });
 }
