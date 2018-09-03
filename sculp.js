@@ -1,3 +1,5 @@
+const { Expressions } = require('@dspacenet/sculp-parser');
+
 /**
  * Adds the required metadata for each procedure that is being executed en in
  * the program
@@ -22,4 +24,18 @@ function tagProcedures(procedure, { user }) {
   }
 }
 
-module.exports = { tagProcedures };
+/**
+ * Translate SCULP only expressions to SCCP
+ * @param {Expressions.Expression} expression
+ */
+function translateSCULP(expression) {
+  if (expression instanceof Expressions.MatchList) {
+    const pid = expression.list.pid ? expression.list.pid.pattern : '*';
+    const usr = expression.list.usr ? expression.list.usr.pattern : '*';
+    const body = expression.list.body ? expression.list.body.pattern : '*';
+    return new Expressions.Pattern(`"<" . ${pid} . * . "|" . ${usr} . ">" . ${body}`);
+  }
+  return expression;
+}
+
+module.exports = { tagProcedures, translateSCULP };

@@ -182,6 +182,8 @@ async function runSCCP(program, path, user, raw) {
         Expressions.Procedure,
         procedure => sculp.tagProcedures(procedure, { user }),
       );
+      // Translate SCULP only expressions
+      finalProgram.patch(sculp.translateSCULP);
       programToExecute = finalProgram.toString();
     }
     ({ result } = await maude.run(`red in SCCP-RUN : ${spaceWrap(programToExecute, path)} . \n`));
