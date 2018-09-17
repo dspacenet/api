@@ -41,6 +41,7 @@ const parser = new SculpParser({
   mail: [Expressions.String],
   'create-poll': [Expressions.String],
   'close-poll': [],
+  call: [Expressions.String],
 });
 
 const loadCrontab = promisify(load);
