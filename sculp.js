@@ -32,8 +32,8 @@ function translateSCULP(expression) {
   if (expression instanceof Expressions.MatchList) {
     const pid = expression.list.pid ? expression.list.pid.pattern : '*';
     const usr = expression.list.usr ? expression.list.usr.pattern : '*';
-    const body = expression.list.body ? expression.list.body.pattern : '*';
-    return new Expressions.Pattern(`"<" . ${pid} . * . "|" . ${usr} . ">" . ${body}`);
+    const txt = expression.list.txt ? expression.list.txt.pattern : '*';
+    return new Expressions.Pattern(`"<" . ${pid} . * . "|" . ${usr} . ">" . ${txt}`);
   }
   return expression;
 }
