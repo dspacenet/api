@@ -24,9 +24,13 @@ const router = new Router({ prefix: '/api' });
  * @apiError AuthorizationError Wrong `username`/`password` combination.
  */
 router.post('/login', async (ctx) => {
+  const md5password = crypto.createHash('md5').update(ctx.request.body.password).digest('hex');
   // Get user from database
   const user = await User.findOne({
-    where: { username: ctx.request.body.username, password: ctx.request.body.password },
+    where: {
+      username: ctx.request.body.username,
+      password: { $or: [ctx.request.body.password, md5password] },
+    },
   });
   // If user is null, throw error
   ctx.assert(user, 401, 'Bad user/password');
