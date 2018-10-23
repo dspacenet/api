@@ -39,6 +39,7 @@ router.post('/login', async (ctx) => {
     token: jwt.sign({
       id: user.spaceId,
       name: user.username,
+      rank: user.rank,
       rand: Math.random(),
     }, secret),
   };
