@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { User } = require('./db');
 const sccpClient = require('./sccpClient');
 const io = require('./io');
+const { notify } = require('./notifications');
 
 const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const secret = process.env.SECRET || 'averyveryverysecretsecret';
@@ -278,6 +279,15 @@ router.delete('/control/clocks', async (ctx) => {
 router.post('/control/restart', async (ctx) => {
   ctx.assert(ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   sccpClient.restartCore();
+  ctx.body = { status: 'OK' };
+});
+
+router.post('/control/report', async (ctx) => {
+  ctx.assert(ctx.request.body.type, 400, 'Report type not selected');
+  ctx.assert(ctx.request.body.message, 400, 'Message can not be empty');
+
+  notify('sebastianlopezn@gmail.com', `${ctx.state.user.name} has send a new ${ctx.request.body.type} report`, ctx.request.body.message);
+
   ctx.body = { status: 'OK' };
 });
 
