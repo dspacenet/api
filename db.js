@@ -17,6 +17,12 @@ const User = sequelize.define('User', {
   password: { type: Sequelize.STRING, allowNull: false },
   spaceId: { type: Sequelize.INTEGER, allowNull: false, primaryKey: true },
   lastClock: { type: Sequelize.BIGINT, allowNull: false },
+  rank: {
+    type: Sequelize.ENUM,
+    values: ['user', 'admin'],
+    allowNull: false,
+    default: 'user',
+  },
 });
 
 /**
