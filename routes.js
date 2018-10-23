@@ -138,6 +138,8 @@ router.post('/space/:path', async (ctx) => {
   const path = ctx.params.path === 'global' ? '' : ctx.params.path;
   // if path is malformed, throw error
   ctx.assert(/^(|\d+(\.\d+)*)$/.test(path), 400, `Malformed path: ${path}`);
+  // if a raw execution is requested, check if user has permission.
+  ctx.assert(!ctx.request.body.raw || ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   // call SCCP API to run the program
   const differences = await sccpClient.runSCCP(
     ctx.request.body.program,
@@ -235,6 +237,7 @@ router.get('/meta/space/:alias', async (ctx) => {
 });
 
 router.get('/process/', async (ctx) => {
+  ctx.assert(ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   ctx.body = await sccpClient.getProcess();
 });
 
@@ -254,21 +257,25 @@ router.post('/backdoor/:path', async (ctx) => {
 });
 
 router.delete('/control/spaces', async (ctx) => {
+  ctx.assert(ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   io.reportChanges(await sccpClient.resetMemory());
   ctx.body = { status: 'OK' };
 });
 
 router.delete('/control/process', async (ctx) => {
+  ctx.assert(ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   sccpClient.killAllProcess();
   ctx.body = { status: 'OK' };
 });
 
 router.delete('/control/clocks', async (ctx) => {
+  ctx.assert(ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   sccpClient.killAllClocks();
   ctx.body = { status: 'OK' };
 });
 
 router.post('/control/restart', async (ctx) => {
+  ctx.assert(ctx.state.user.rank === 'admin', 403, 'You aren\'t allowed to do this.');
   sccpClient.restartCore();
   ctx.body = { status: 'OK' };
 });
