@@ -28,6 +28,7 @@ let processes = '';
 let ntccTime = 0;
 let rawMemory = '';
 let crontab;
+let busy = false;
 
 const parser = new SculpParser({
   post: [Expressions.String],
@@ -45,6 +46,7 @@ const parser = new SculpParser({
 });
 
 const loadCrontab = promisify(load);
+const executionQueue = [];
 
 /**
  * Alters [program] to run inside the given [path].
@@ -159,7 +161,7 @@ async function updateState(newMemory, newProcesses) {
  * @param {String} path - path to the space where the program will be executed.
  * @param {String} user - owner of the program.
  */
-async function runSCCP(program, path, user, raw) {
+async function postRunSCCP(program, path, user, raw) {
   try {
     let result = '';
     let programToExecute;
@@ -201,6 +203,31 @@ async function runSCCP(program, path, user, raw) {
     console.error(error); // eslint-disable-line no-console
     throw new APIError(`${Error.name}: ${error.message}`, 400);
   }
+}
+
+async function next() {
+  if (!busy && executionQueue.length) {
+    const {
+      program, path, user, raw, reject, resolve,
+    } = executionQueue.shift();
+    busy = true;
+    try {
+      resolve(await postRunSCCP(program, path, user, raw));
+    } catch (error) {
+      reject(error);
+    }
+    busy = false;
+    if (executionQueue.length) process.nextTick(next);
+  }
+}
+
+function runSCCP(program, path, user, raw) {
+  return new Promise((resolve, reject) => {
+    executionQueue.push({
+      program, path, user, raw, resolve, reject,
+    });
+    next();
+  });
 }
 
 /**
