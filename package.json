@@ -28,6 +28,6 @@
     "mysql2": "^1.5.1",
     "nodemailer": "^4.6.7",
     "sequelize": "^4.28.6",
-    "socket.io": "^2.1.1"
+    "socket.io": "^2.4.0"
   }
 }
