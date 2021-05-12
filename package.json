@@ -26,7 +26,7 @@
     "koa-router": "^7.3.0",
     "mailgun-js": "^0.18.0",
     "mysql2": "^1.5.1",
-    "nodemailer": "^4.6.7",
+    "nodemailer": "^6.4.16",
     "sequelize": "^4.28.6",
     "socket.io": "^2.1.1"
   }
